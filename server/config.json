@@ -1,0 +1,20 @@
+{
+    "Port": 14000,
+    "Instruments": [
+        {
+            "Id": 1,
+            "Symbol": "AAPL",
+            "Specs": {
+                "OrderBookDepth": 10 
+            }
+        },
+
+        {
+            "Id": 2,
+            "Symbol": "GOOG",
+            "Specs": {
+                "OrderBookDepth": 5
+            }
+        }
+    ]
+}
