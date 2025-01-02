@@ -1,38 +1,30 @@
-from parser import load_data
-from OrderBookManager import OrderBookManager
+from server.services.parser import load_data
+from server.services.OrderBookService import OrderBookService
+from server.models.OrderBook import OrderBook
 
-import asyncio
 class Server:
     def __init__(self, config_path):
-        data = load_data(config_path)
-        self.instruments = data[1]
-        self.orderbooks = {} # Dict<int, OrderBook> 
-        for instrument in self.instruments:
-            self.orderbooks[instrument.id] = instrument
-        self.orderbook_manager = OrderBookManager(self.instruments)
-        self.running = True
-    
-    async def get_snapshot(self, instrument_id):
-        orderbook = self.orderbooks.get(instrument_id)
-        if not orderbook:
-            raise KeyError(f"Orderbook {instrument_id} not present")
-        return await orderbook.get_snapshot()
+        self.orderbooks = {}
+        self.service = None
+        self.config_path = config_path
 
     async def start(self):
         print("Starting server...")
-        await asyncio.gather(
-            self.orderbook_manager.start(),
-            self.disseminate_data()
-        )
+        config = load_data(self.config_path)
+        self.service = OrderBookService(config[0])
 
-    async def disseminate_data(self):
-        try:
-            while self.running:
-                await self.orderbook_manager.upload_snapshots()
-                await asyncio.sleep(1)
-        except asyncio.CancelledError:
-            print("Dissemination Failed")
-
-    async def stop(self):
-        print("Stopping Server...")
-        self.running = False
+        for instrument in config[1]:
+            orderbook = OrderBook(instrument, self.service)
+            self.orderbooks[instrument.id] = orderbook
+            await orderbook.start()
+    
+    def get_snapshot(self, instrument_id):
+        if instrument_id not in self.orderbooks:
+            raise KeyError(f"Orderbook {instrument_id} not found")
+        return self.orderbooks[instrument_id].get_snapshot()
+    
+    def dispose(self):
+        print("Closing server...")
+        for orderbook in self.orderbooks.values():
+            orderbook.dispose()
+        self.orderbooks.clear()
