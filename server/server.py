@@ -1,6 +1,8 @@
+import server.globals.orderbook_mappings
 from server.services.parser import load_data
 from server.services.OrderBookService import OrderBookService
 from server.models.OrderBook import OrderBook
+import server.globals
 
 class Server:
     def __init__(self, config_path):
@@ -16,6 +18,9 @@ class Server:
         for instrument in config[1]:
             orderbook = OrderBook(instrument, self.service)
             self.orderbooks[instrument.id] = orderbook
+
+            server.globals.orderbook_mappings[instrument.id] = orderbook
+            
             await orderbook.start()
     
     def get_snapshot(self, instrument_id):
