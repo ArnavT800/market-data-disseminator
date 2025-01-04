@@ -19,7 +19,7 @@ class Server:
             orderbook = OrderBook(instrument, self.service)
             self.orderbooks[instrument.id] = orderbook
 
-            server.globals.orderbook_mappings[instrument.id] = orderbook
+            server.globals.orderbook_mappings.ORDERBOOKS[instrument.id] = orderbook
             
             await orderbook.start()
     

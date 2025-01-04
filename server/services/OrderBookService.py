@@ -5,7 +5,7 @@ import grpc
 import concurrent
 import asyncio
 import collections
-import globals.orderbook_mappings
+import server.globals.orderbook_mappings
 
 class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceServicer):
     def __init__(self, port):
@@ -73,7 +73,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
         response = self.create_unsub_response(instrument_id, client_address)
         await self.client_queues[client_address].put(response)
 
-    def create_failure_response(instrument_id, client_address):
+    def create_failure_response(self, instrument_id, client_address):
         error_message = server.grpc.market_data_pb2.ErrorResponse(
             error = f"Subscription/unsubscription mechanism failed for {client_address} to {instrument_id}"
         )
@@ -83,7 +83,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
             message = error_message
         )
     
-    def create_snapshot_response(instrument_id, snapshot):
+    def create_snapshot_response(self, instrument_id, snapshot):
         return server.grpc.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
             type = server.grpc.market_data_pb2.MarketDataResponse.SNAPSHOT,
@@ -100,7 +100,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
             message = f"New snapshot for {instrument_id}"
         )
     
-    def create_incremental_update_response(instrument_id, update):
+    def create_incremental_update_response(self, instrument_id, update):
         update_mappings = {
             "Adding": server.grpc.market_data_pb2.OrderBookUpdate.ADD,
             "Removing": server.grpc.market_data_pb2.OrderBookUpdate.REMOVE,
@@ -120,7 +120,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
             )
         )
     
-    def create_unsub_response(instrument_id, client_address):
+    def create_unsub_response(self, instrument_id, client_address):
         unsubscribe_message = f"Client {client_address} successfully unsubscribed from instrument {instrument_id}"
         return server.grpc.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
