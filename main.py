@@ -1,5 +1,6 @@
 from server.server import Server
 import asyncio
+
 async def main():
     server = Server("./server/config.json")
     await server.start()

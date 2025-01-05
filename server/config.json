@@ -1,5 +1,5 @@
 {
-    "Port": 14000,
+    "Port": 50051,
     "Instruments": [
         {
             "Id": 1,

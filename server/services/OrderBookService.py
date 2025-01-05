@@ -6,24 +6,26 @@ import concurrent
 import asyncio
 import collections
 import server.globals.orderbook_mappings
+import pdb
 
 class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceServicer):
     def __init__(self, port):
         self.port = port
         self.client_subscriptions = collections.defaultdict(set)
-        self.client_queues = []
+        self.client_queues = {}
     
     async def StreamMarketData(self, request_iterator, context):
+        # pdb.set_trace()
         client_address = context.peer()
         queue = asyncio.Queue()
         self.client_queues[client_address] = queue
 
         asyncio.create_task(self.handle_subscriptions(request_iterator, client_address, context))
-
+        print("goes here")
         try:
             while True:
                 response = await queue.get()
-                if not response:
+                if response is None:
                     break
                 yield response
         finally:
@@ -56,7 +58,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
 
         self.client_subscriptions[client_address].add(instrument_id)
         print(f"Client {client_address} successfully subscribed to {instrument_id}")
-        current_orderbook_object = globals.orderbook_mappings.ORDERBOOKS[instrument_id]
+        current_orderbook_object = server.globals.orderbook_mappings.ORDERBOOKS[instrument_id]
         snapshot = current_orderbook_object.get_snapshot()
 
         response = self.create_snapshot_response(instrument_id, snapshot)
