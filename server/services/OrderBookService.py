@@ -21,7 +21,6 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
         self.client_queues[client_address] = queue
 
         asyncio.create_task(self.handle_subscriptions(request_iterator, client_address, context))
-        print("goes here")
         try:
             while True:
                 response = await queue.get()
@@ -72,6 +71,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
             return
         
         self.client_subscriptions[client_address].discard(instrument_id)
+        print(f"Client {client_address} successfully unsubscribed from {instrument_id}")
         response = self.create_unsub_response(instrument_id, client_address)
         await self.client_queues[client_address].put(response)
 

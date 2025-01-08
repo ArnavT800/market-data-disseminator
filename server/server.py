@@ -5,6 +5,7 @@ from server.models.OrderBook import OrderBook
 import server.globals
 import grpc
 import server.grpc.market_data_pb2_grpc
+import asyncio
 
 class Server:
     def __init__(self, config_path):
@@ -49,8 +50,11 @@ class Server:
             raise KeyError(f"Orderbook {instrument_id} not found")
         return self.orderbooks[instrument_id].get_snapshot()
     
-    def dispose(self):
+    async def dispose(self):
         print("Closing server...")
         for orderbook in self.orderbooks.values():
             orderbook.dispose()
         self.orderbooks.clear()
+        print("stopping grpc")
+        await self.grpc_server.stop(grace=True)
+        await asyncio.sleep(1)

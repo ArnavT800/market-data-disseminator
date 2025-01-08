@@ -7,9 +7,11 @@ async def main():
 
     try:
         while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        server.dispose()
+            await asyncio.sleep(0)
+    except Exception as e:
+        print(f"error occured: {e}")
+    finally:
+        await server.dispose()
         
 if __name__ == "__main__":
     asyncio.run(main())
