@@ -18,8 +18,7 @@ to clients via a subscription mechanism.
 ## Setup
 
 #### Prequisites
-- Python 3.8+
-- gRPC libraries (Ensure grpcio and grpcio-tools are installed)
+Run `pip install -r requirements.txt`
 
 #### Starting the Server
 `python main.py`
