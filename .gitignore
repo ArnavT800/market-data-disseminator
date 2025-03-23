@@ -4,3 +4,4 @@ server/server.csr
 client/server.crt
 server/server.cnf
 claude/
+myenv/
