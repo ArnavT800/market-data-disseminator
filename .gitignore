@@ -2,7 +2,6 @@ server/server.key
 server/server.crt
 server/server.csr
 client/server.crt
-server/server.cnf
 claude/
 myenv/
 */__pycache__
