@@ -19,6 +19,7 @@ to clients via a subscription mechanism.
 
 #### Prequisites
 Run `pip install -r requirements.txt`
+Run `./GenerateCerts.sh`
 
 #### Starting the Server
 `python main.py`
