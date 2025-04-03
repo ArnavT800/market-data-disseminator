@@ -1,8 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import server.grpc.market_data_pb2
-import server.grpc.market_data_pb2_grpc
+import grpc_files.market_data_pb2
+import grpc_files.market_data_pb2_grpc
 import grpc
 import asyncio
 import pdb
@@ -15,7 +12,7 @@ class MarketDataClient:
         self.subscription_queue = asyncio.Queue()
     
     def connect(self, server_address):
-        with open('server.crt', 'rb') as cert_file:
+        with open('client/server.crt', 'rb') as cert_file:
             server_cert = cert_file.read()
         options = (('grpc.ssl_target_name_override', 'localhost'),)
 
@@ -25,7 +22,7 @@ class MarketDataClient:
             credentials, 
             options
         )
-        self.stub = server.grpc.market_data_pb2_grpc.MarketDataServiceStub(self.channel)
+        self.stub = grpc_files.market_data_pb2_grpc.MarketDataServiceStub(self.channel)
     
     async def run(self):
         async def request_iterator():
@@ -46,27 +43,27 @@ class MarketDataClient:
             await self.subscription_queue.put(None)
     
     async def subscribe(self, instrument_id):
-        request = server.grpc.market_data_pb2.SubscriptionRequest(
+        request = grpc_files.market_data_pb2.SubscriptionRequest(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.SubscriptionRequest.SUBSCRIBE
+            type = grpc_files.market_data_pb2.SubscriptionRequest.SUBSCRIBE
         )
 
         await self.subscription_queue.put(request)
 
     async def unsubscribe(self, instrument_id):
-        request = server.grpc.market_data_pb2.SubscriptionRequest(
+        request = grpc_files.market_data_pb2.SubscriptionRequest(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.SubscriptionRequest.UNSUBSCRIBE
+            type = grpc_files.market_data_pb2.SubscriptionRequest.UNSUBSCRIBE
         )
 
         await self.subscription_queue.put(request)
     
     async def handle_response(self, response):
-        if response.type == server.grpc.market_data_pb2.MarketDataResponse.SNAPSHOT:
+        if response.type == grpc_files.market_data_pb2.MarketDataResponse.SNAPSHOT:
             self.handle_snapshot(response)
-        elif response.type == server.grpc.market_data_pb2.MarketDataResponse.INCREMENTAL:
+        elif response.type == grpc_files.market_data_pb2.MarketDataResponse.INCREMENTAL:
             self.handle_incremental_update(response)
-        elif response.type == server.grpc.market_data_pb2.MarketDataResponse.ERROR:
+        elif response.type == grpc_files.market_data_pb2.MarketDataResponse.ERROR:
             self.handle_error(response)
         else:
             self.handle_unsubscribe(response)
@@ -84,9 +81,9 @@ class MarketDataClient:
         
     def handle_incremental_update(self, response):
         update_mappings = {
-            server.grpc.market_data_pb2.OrderBookUpdate.ADD: "Adding",
-            server.grpc.market_data_pb2.OrderBookUpdate.REMOVE: "Removing", 
-            server.grpc.market_data_pb2.OrderBookUpdate.REPLACE: "Replacing"
+            grpc_files.market_data_pb2.OrderBookUpdate.ADD: "Adding",
+            grpc_files.market_data_pb2.OrderBookUpdate.REMOVE: "Removing", 
+            grpc_files.market_data_pb2.OrderBookUpdate.REPLACE: "Replacing"
         }
 
         bid_or_ask = "Bid" if response.update_data.is_bid else "Ask"
@@ -103,63 +100,3 @@ class MarketDataClient:
         while not self.subscription_queue.empty():
             await asyncio.sleep(0.1)
 
-async def user_input_loop(client):
-    while True:
-        print("Commands: ")
-        print("S <instrument_id>: Subscribe to instrument with id")
-        print("U <instrument_id>: Unsubscribe to instrument with id")
-        input_thread_call = await asyncio.to_thread(input)
-        user_inp = input_thread_call.strip().split(" ")
-        if len(user_inp) != 2:
-            print("Invalid command")
-            continue
-        command = user_inp[0]
-        instrument = int(user_inp[1])
-
-        if command == "S":
-            await client.subscribe(instrument)
-        elif command == "U":
-            await client.unsubscribe(instrument)
-        else:
-            print("Invalid command")
-            continue
-
-async def main():
-    client = MarketDataClient()
-    client.connect('localhost:3000')
-
-    client_task = asyncio.create_task(client.run())
-    input_task = asyncio.create_task(user_input_loop(client))
-
-    try:
-        await asyncio.gather(client_task, input_task)
-    except Exception as e:
-        print(f"Error occurred with .gather: {e}")
-
-    finally:
-        await client.flush_queue()
-        client_task.cancel()
-        await client.channel.close()
-
-    
-    # await client.subscribe(2)
-    # try:
-    #     while True:
-    #         await asyncio.sleep(1)
-    # except KeyboardInterrupt:
-    #     client_task.cancel()
-    #     await client.channel.close()  
-    # try:
-    #     await client.subscribe(1)
-    #     await client.subscribe(2)
-    #     await asyncio.sleep(5)
-    # finally:
-    #     await client.unsubscribe(1)
-    #     await client.unsubscribe(2)
-    #     await client.flush_queue()
-    #     client_task.cancel()
-    #     await client.channel.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

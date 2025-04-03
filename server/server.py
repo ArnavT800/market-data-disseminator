@@ -4,7 +4,7 @@ from server.services.OrderBookService import OrderBookService
 from server.models.OrderBook import OrderBook
 import server.globals
 import grpc
-import server.grpc.market_data_pb2_grpc
+import grpc_files.market_data_pb2_grpc
 import asyncio
 
 class Server:
@@ -20,7 +20,7 @@ class Server:
         self.service = OrderBookService(config[0])
 
         self.grpc_server = grpc.aio.server()
-        server.grpc.market_data_pb2_grpc.add_MarketDataServiceServicer_to_server(self.service, self.grpc_server)
+        grpc_files.market_data_pb2_grpc.add_MarketDataServiceServicer_to_server(self.service, self.grpc_server)
         server_address = 'localhost:3000'
 
         with open('server/server.crt', 'rb') as cert_file:

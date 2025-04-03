@@ -1,6 +1,6 @@
-import server.grpc
-import server.grpc.market_data_pb2_grpc
-import server.grpc.market_data_pb2
+import grpc_files
+import grpc_files.market_data_pb2_grpc
+import grpc_files.market_data_pb2
 import grpc
 import concurrent
 import asyncio
@@ -8,7 +8,7 @@ import collections
 import server.globals.orderbook_mappings
 import pdb
 
-class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceServicer):
+class OrderBookService(grpc_files.market_data_pb2_grpc.MarketDataServiceServicer):
     def __init__(self, port):
         self.port = port
         self.client_subscriptions = collections.defaultdict(set)
@@ -33,7 +33,7 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
     async def handle_subscriptions(self, request_iterator, client_address, context):
         try:
             async for request in request_iterator:
-                if request.type == server.grpc.market_data_pb2.SubscriptionRequest.SUBSCRIBE:
+                if request.type == grpc_files.market_data_pb2.SubscriptionRequest.SUBSCRIBE:
                     await self.handle_subscribe(client_address, request.instrument_id)
                 else:
                     await self.handle_unsubscribe(client_address, request.instrument_id)
@@ -76,26 +76,26 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
         await self.client_queues[client_address].put(response)
 
     def create_failure_response(self, instrument_id, client_address):
-        error_message = server.grpc.market_data_pb2.ErrorResponse(
+        error_message = grpc_files.market_data_pb2.ErrorResponse(
             error = f"Subscription/unsubscription mechanism failed for {client_address} to {instrument_id}"
         )
-        return server.grpc.market_data_pb2.MarketDataResponse(
+        return grpc_files.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.MarketDataResponse.ERROR,
+            type = grpc_files.market_data_pb2.MarketDataResponse.ERROR,
             message = error_message
         )
     
     def create_snapshot_response(self, instrument_id, snapshot):
-        return server.grpc.market_data_pb2.MarketDataResponse(
+        return grpc_files.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.MarketDataResponse.SNAPSHOT,
-            orderbook_data = server.grpc.market_data_pb2.OrderBookData(
+            type = grpc_files.market_data_pb2.MarketDataResponse.SNAPSHOT,
+            orderbook_data = grpc_files.market_data_pb2.OrderBookData(
                 bids = [
-                    server.grpc.market_data_pb2.Level(price = price, quantity = quantity)
+                    grpc_files.market_data_pb2.Level(price = price, quantity = quantity)
                     for price, quantity in snapshot['bids']
                 ],
                 asks = [
-                    server.grpc.market_data_pb2.Level(price = price, quantity = quantity)
+                    grpc_files.market_data_pb2.Level(price = price, quantity = quantity)
                     for price, quantity in snapshot['asks']
                 ]
             ),
@@ -104,18 +104,18 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
     
     def create_incremental_update_response(self, instrument_id, update):
         update_mappings = {
-            "Adding": server.grpc.market_data_pb2.OrderBookUpdate.ADD,
-            "Removing": server.grpc.market_data_pb2.OrderBookUpdate.REMOVE,
-            "Replacing": server.grpc.market_data_pb2.OrderBookUpdate.REPLACE
+            "Adding": grpc_files.market_data_pb2.OrderBookUpdate.ADD,
+            "Removing": grpc_files.market_data_pb2.OrderBookUpdate.REMOVE,
+            "Replacing": grpc_files.market_data_pb2.OrderBookUpdate.REPLACE
         }
 
-        return server.grpc.market_data_pb2.MarketDataResponse(
+        return grpc_files.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.MarketDataResponse.INCREMENTAL,
-            update_data = server.grpc.market_data_pb2.OrderBookUpdate(
+            type = grpc_files.market_data_pb2.MarketDataResponse.INCREMENTAL,
+            update_data = grpc_files.market_data_pb2.OrderBookUpdate(
                 type = update_mappings[update.action],
                 is_bid = update.is_bid,
-                level = server.grpc.market_data_pb2.Level(
+                level = grpc_files.market_data_pb2.Level(
                     price = update.level.price,
                     quantity = update.level.quantity
                 )
@@ -124,9 +124,9 @@ class OrderBookService(server.grpc.market_data_pb2_grpc.MarketDataServiceService
     
     def create_unsub_response(self, instrument_id, client_address):
         unsubscribe_message = f"Client {client_address} successfully unsubscribed from instrument {instrument_id}"
-        return server.grpc.market_data_pb2.MarketDataResponse(
+        return grpc_files.market_data_pb2.MarketDataResponse(
             instrument_id = instrument_id,
-            type = server.grpc.market_data_pb2.MarketDataResponse.UNSUBSCRIBE,
+            type = grpc_files.market_data_pb2.MarketDataResponse.UNSUBSCRIBE,
             message = unsubscribe_message
         )
 

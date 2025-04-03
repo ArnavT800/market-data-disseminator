@@ -1,0 +1,50 @@
+syntax = "proto3";
+package marketdata;
+
+message SubscriptionRequest {
+    int32 instrument_id = 1;
+    enum RequestType {
+        SUBSCRIBE = 0;
+        UNSUBSCRIBE = 1;
+    }
+    RequestType type = 2;
+}
+
+message Level {
+    float price = 1;
+    int32 quantity = 2;
+}
+
+message OrderBookData {
+    repeated Level bids = 1;
+    repeated Level asks = 2;
+}
+
+message MarketDataResponse {
+    int32 instrument_id = 1;
+    enum ResponseType {
+        SNAPSHOT = 0;
+        INCREMENTAL = 1;
+        ERROR = 2;
+        UNSUBSCRIBE = 3;
+    }
+    ResponseType type = 2;
+    OrderBookData orderbook_data = 3;  // For snapshots
+    OrderBookUpdate update_data = 4;    // For incremental updates
+    string message = 5;                 // For errors and unsubscribe messages
+}
+
+message OrderBookUpdate {
+    enum UpdateType {
+        ADD = 0;
+        REPLACE = 1;
+        REMOVE = 2;
+    }
+    UpdateType type = 1;
+    bool is_bid = 2;
+    Level level = 3;
+}
+
+service MarketDataService {
+    rpc StreamMarketData (stream SubscriptionRequest) returns (stream MarketDataResponse);
+}
